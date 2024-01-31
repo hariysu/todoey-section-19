@@ -10,11 +10,12 @@ import UIKit
 class TodoListViewController: UITableViewController {
     
     var itemArray = [Item]()
-    // To use user's default database
-    let defaults = UserDefaults.standard
+    // Creates a file path to the Documents folder
+    let dataFilePath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?.appendingPathExtension("Items.plist")
     
     override func viewDidLoad() {
         super.viewDidLoad()
+
         let newItem = Item()
         newItem.title = "Hi"
         itemArray.append(newItem)
@@ -27,7 +28,7 @@ class TodoListViewController: UITableViewController {
         newItem3.title = "HiToEveryOne"
         itemArray.append(newItem3)
         
-//        if let items = defaults.array(forKey: "ToDoListArray") as? [String : Bool] {
+//        if let items = defaults.array(forKey: "ToDoListArray") as? [Item] {
 //            itemArray = items
 //        }
     }
@@ -58,15 +59,13 @@ class TodoListViewController: UITableViewController {
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
 
         itemArray[indexPath.row].done = !itemArray[indexPath.row].done
-        DispatchQueue.main.async {
-            tableView.reloadData()
-        }
+        self.saveItems()
         
         tableView.deselectRow(at: indexPath, animated: true)
         
     }
     
-    // MARK - Add new items
+    // MARK: Add new items
     
     @IBAction func addButtonPressed(_ sender: UIBarButtonItem) {
         var textField = UITextField()
@@ -78,10 +77,7 @@ class TodoListViewController: UITableViewController {
             let newItem = Item()
             newItem.title = textField.text!
             self.itemArray.append(newItem)
-            self.defaults.set(self.itemArray, forKey: "ToDoListArray")
-            DispatchQueue.main.async {
-                self.tableView.reloadData()
-            }
+            self.saveItems()
         }
     
         alert.addTextField { alertTextField in
@@ -91,6 +87,21 @@ class TodoListViewController: UITableViewController {
         
         alert.addAction(action)
         present(alert, animated: true)
+    }
+    
+    // MARK: Model Manipulation Methods
+    
+    func saveItems() {
+        let encoder = PropertyListEncoder()
+        do {
+            let data = try encoder.encode(self.itemArray)
+            try data.write(to: self.dataFilePath!)
+        } catch {
+            print("Error encoding item array \(error)")
+        }
+        DispatchQueue.main.async {
+            self.tableView.reloadData()
+        }
     }
     
 }
